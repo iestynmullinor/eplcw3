@@ -280,15 +280,15 @@ object Assignment3Standalone {
 
     //booleans
 
-    case Eq(e1,e2) => (tyOf(ctx,e1),tyOf(ctx,e2)) match {
-        case (a, b) => if (a == b) {
+    case Eq(se1,se2) => (tyOfSignal(ctx,se1),tyOfSignal(ctx,se2)) match {
+        case (a, b) => if ((a == b) && ((a == IntTy) || (a == BoolTy))) {
         BoolTy
       } else {
         sys.error("types of eq must be equal")
       }
     }
 
-      case LessThan(e1,e2) => (tyOf(ctx,e1),tyOf(ctx,e2)) match {
+      case LessThan(se1,se2) => (tyOfSignal(ctx,se1),tyOfSignal(ctx,se2)) match {
         case (a, b) => if (a == b) {
         BoolTy
       } else {
@@ -296,7 +296,7 @@ object Assignment3Standalone {
       }
     }
 
-      case GreaterThan(e1,e2) => (tyOf(ctx,e1),tyOf(ctx,e2)) match {
+      case GreaterThan(se1,se2) => (tyOfSignal(ctx,se1),tyOfSignal(ctx,se2)) match {
         case (a, b) => if (a == b) {
         BoolTy
       } else {
@@ -304,8 +304,8 @@ object Assignment3Standalone {
       }
     }
 
-      case IfThenElse(e,e1,e2) =>
-      (tyOf(ctx,e),tyOf(ctx,e1),tyOf(ctx,e2)) match {
+      case IfThenElse(se,se1,se2) =>
+      (tyOf(ctx,se),tyOfSignal(ctx,se1),tyOfSignal(ctx,se2)) match {
         case (BoolTy,a,b) => if (a == b) {
           a
         }
@@ -315,6 +315,53 @@ object Assignment3Standalone {
         case (_,a,b) => sys.error("type of conditional must be boolean")
       }
 
+      //strings and rest
+      //the weierd none thats after string (PROBABLY VIOLENTLY WRONG)
+      //case x : Expr => if (isSimpleType(tyOf(ctx,x))) {tyOfSignal(ctx,x)} else {sys.error("Must be simple type")}
+
+      //app
+      case App(se1,se2) => (tyOfSignal(ctx,se1),tyOfSignal(ctx,se2)) match {
+        case (FunTy(a,b),c) => if (a == c) {
+        b
+        } else {
+        sys.error("Argument type does not match fuction input")
+        }
+        case (a,c) => sys.error("Function type not found!\n" +
+          "Typing " + se1.toString + "type is: " + a.toString + "\n" +
+          "Typing " + se2.toString + "type is: " + c.toString + "\n")
+
+      }
+
+      //time 
+      case Time => IntTy
+
+      //blank
+      case Blank => FrameTy
+
+      //over
+      case Over(se1,se2) => (tyOfSignal(ctx, se1), tyOfSignal(ctx, se2)) match {
+        case (FrameTy, FrameTy) => FrameTy
+        case _ => sys.error("arguments not both of type frame")
+    }
+
+      //moveXY
+      case MoveXY(x,y,a) => (tyOfSignal(ctx, x), tyOfSignal(ctx,y), tyOfSignal(ctx, a)) match {
+        case (IntTy, IntTy, FrameTy) => FrameTy
+        case _ => sys.error("x and y must be signal(int), a must be signal(frame)")
+    }
+
+    //read
+      case Read(e) => tyOf(ctx, e) match {
+        case StringTy => FrameTy
+        case _ => sys.error("argument is not string")
+    }
+
+    //escape
+      case Escape(e) => tyOf(ctx, e) match {
+        case SignalTy(tau) => tau
+        case _ => sys.error("Must be signal")
+        
+      }
 
 
       case _ => sys.error("todo")
