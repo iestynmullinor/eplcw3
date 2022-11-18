@@ -240,7 +240,7 @@ object Assignment3Standalone {
     //SignalBlock
     case SignalBlock(se) => SignalTy(tyOfSignal(ctx,se))
 
-      case _ => sys.error("todo")
+      case _ => sys.error("todo typechecker ex2")
       // END ANSWER
     }
   }
@@ -363,8 +363,18 @@ object Assignment3Standalone {
         
       }
 
+    //get rid of this it is only here for  a test \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+      case When(e1,e2,e3) => (tyOfSignal(ctx,e1), tyOfSignal(ctx,e2), tyOfSignal(ctx,e3)) match {
+      case (BoolTy,tau1,tau2) => if (tau1 == tau2) {tau1} else {sys.error("e2 and e3 must both have same type")}
+      case _ => sys.error("e1 must be Signal[Boolean]")
+    }
 
-      case _ => sys.error("todo")
+      //idk
+      case Var(x) => SignalTy(ctx(x))
+
+
+      case _ => {
+        sys.error("todo signal typechecker ex3 this is the case " + e.toString)}
       // END ANSWER
     }
   }
@@ -444,6 +454,7 @@ object Assignment3Standalone {
    *  Exercise 4  *
    ****************/
 
+
   // ----------------------------------------------------------------
   // Substitution e1 [e2 / x]
   def subst(e1:Expr, e2:Expr, x: Variable): Expr = {
@@ -452,7 +463,110 @@ object Assignment3Standalone {
       // Values are closed so substitution has no effect
       case v: Value => v
       // BEGIN ANSWER
-      case _ => sys.error("todo")
+
+      //arithmetic
+      //case Num(e) => Num(e)
+      case Plus(t1,t2) => Plus(subst(t1,e2,x),subst(t2,e2,x))
+      case Minus(t1,t2) => Minus(subst(t1,e2,x),subst(t2,e2,x))
+      case Times(t1,t2) => Times(subst(t1,e2,x),subst(t2,e2,x))
+      case Div(t1,t2) => Div(subst(t1,e2,x),subst(t2,e2,x))
+
+      //Booleans 
+      case Eq(t1,t2) => Eq(subst(t1,e2,x),subst(t2,e2,x))
+      case IfThenElse(t0,t1,t2) => IfThenElse(subst(t0,e2,x),subst(t1,e2,x),subst(t2,e2,x))
+      case GreaterThan(t1,t2) => GreaterThan(subst(t1,e2,x),subst(t2,e2,x))
+      case LessThan(t1,t2) => LessThan(subst(t1,e2,x),subst(t2,e2,x))
+
+      //variables and let binding
+      case Var(y) =>
+        if (x == y) {
+          e2
+        } else {
+          Var(y)
+        }
+
+      case Let(y,t1,t2) => {
+        val z = Gensym.gensym(y);
+        Let(z,subst(t1,e2,x),subst(swap(t2,y,z),e2,x))
+      }
+
+      case LetPair(y1,y2,t1,t2) => {
+        val y1z = Gensym.gensym(y1);
+        val y2z = Gensym.gensym(y2);
+        LetPair(y1z,y2z,subst(t1,e2,x),
+          subst(swap(swap(t2,y1z,y1), y2z, y2), e2,x))
+      }
+
+      case LetFun(f,y,ty,t1,t2) => {
+        val fz = Gensym.gensym(f);
+        val yz = Gensym.gensym(y);
+        LetFun(fz,yz,ty,subst(swap(t1,yz,y),e2,x),
+          subst(swap(t2,fz,f), e2,x))
+      }
+
+      case LetRec(f,y,ty1,ty2,t1,t2) => {
+        val fz = Gensym.gensym(f);
+        val yz = Gensym.gensym(y);
+        LetRec(fz,yz,ty1,ty2,subst(swap(swap(t1,fz,f),yz,y),e2,x),
+          subst(swap(t2,fz,f), e2,x))
+      }
+
+      //pairs
+      case Pair(t1,t2) => Pair(subst(t1,e2,x),subst(t2,e2,x))
+      case Fst(t0) => Fst(subst(t0,e2,x))
+      case Snd(t0) => Snd(subst(t0,e2,x))
+
+      //functiona
+      case Lambda(y,ty,t0) => {
+        val z = Gensym.gensym(y);
+        Lambda(z,ty,subst(swap(t0,y,z),e2,x))
+      }
+      case App(t1,t2) => App(subst(t1,e2,x),subst(t2,e2,x))
+      case Rec(f,y,ty1,ty2,t0) => { 
+        val g = Gensym.gensym(f);
+        val z = Gensym.gensym(y);
+        Rec(g,z,ty1,ty2,subst(swap(swap(t0,f,g),y,z),e2,x))
+      }
+
+      // Lists
+      case EmptyList(ty) => EmptyList(ty)
+
+      case Cons(t1, t2) => Cons(subst(t1,e2,x),subst(t2,e2,x))
+
+      case ListCase(l, t1, consVar1, consVar2, t2) => {
+        val consVar1Z = Gensym.gensym(consVar1);
+        val consVar2Z = Gensym.gensym(consVar2);
+        ListCase(subst(l,e2,x),subst(t1,e2,x),consVar1Z,consVar2Z,subst(t2,e2,x))
+      }
+
+
+
+      // Sequencing 
+      case Seq(t1,t2) => Seq(subst(t1,e2,x), subst(t2,e2,x))
+
+
+      // Signals
+      case Time => Time
+
+      case Pure(t) => Pure(subst(t,e2,x))
+
+      case Apply(t1, t2) => Apply(subst(t1,e2,x), subst(t2,e2,x))
+
+      case Read(t) => Read(subst(t,e2,x))
+
+      case MoveXY(x1, y1, a) => MoveXY(subst(x1,e2,x), subst(y1,e2,x), subst(a,e2,x))
+
+      case Blank => Blank
+
+      case Over(t1,t2) => Over(subst(t1,e2,x),subst(t2,e2,x))
+
+      case When(t1,t2,t3) => When(subst(t1,e2,x),subst(t2,e2,x),subst(t3,e2,x))
+
+      case SignalBlock(t) => SignalBlock(subst(t,e2,x))
+
+      case Escape(t) => Escape(subst(t,e2,x))
+
+      case _ => sys.error("todo substitution ex4")
       // END ANSWER
     }
   }
@@ -477,7 +591,64 @@ object Assignment3Standalone {
     e match {
       case v: Value => desugarVal(v)
       // BEGIN ANSWER
-      case _ => sys.error("todo")
+
+      // arithmetic expressions
+
+      case Plus(e1,e2) => Plus(desugar(e1),desugar(e2))
+      case Minus(e1,e2) => Minus(desugar(e1),desugar(e2))
+      case Times(e1,e2) => Times(desugar(e1),desugar(e2))
+      case Div(e1,e2) => Div(desugar(e1),desugar(e2))
+
+      // booleans
+
+      case Eq(e1,e2) => Eq(desugar(e1),desugar(e2))
+      case IfThenElse(cond,e1,e2) => IfThenElse(desugar(cond),desugar(e1),desugar(e2))
+      case GreaterThan(e1,e2) => GreaterThan(desugar(e1),desugar(e2))
+      case LessThan(e1,e2) => LessThan(desugar(e1),desugar(e2))
+
+      //variables and let bindings
+      case Let(x,e1,e2) => Let(x,desugar(e1),desugar(e2))
+      case LetFun(f,arg,ty,e1,e2) =>
+        Let(f,Lambda(arg,ty,desugar(e1)),desugar(e2))
+      case LetRec(f,arg,xty,ty,e1,e2) => {
+        Let(f,
+          Rec(f,arg,xty,ty,desugar(e1)),
+          desugar(e2))
+      }
+      case LetPair(x,y,e1,e2) => {
+        val p = Gensym.gensym("p")
+        Let(p,desugar(e1),subst(subst(desugar(e2),Fst(Var(p)),x),Snd(Var(p)),y))
+      }
+
+      // pairs
+      case Pair(e1,e2) => Pair(desugar(e1),desugar(e2))
+      case Fst(e) => Fst(desugar(e))
+      case Snd(e) => Snd(desugar(e))
+
+      //functions
+      case Lambda(x,ty,e) => Lambda(x,ty,desugar(e))
+      case App(e1,e2) => App(desugar(e1),desugar(e2))
+      case Rec(f,x,tyx,ty,e) => Rec(f,x,tyx,ty,desugar(e))
+
+      // lists
+      case EmptyList(ty) => EmptyList(ty)
+
+      case Cons(e1, e2) => Cons(desugar(e1),desugar(e2))
+
+      case ListCase(l, t1, consVar1, consVar2, t2) => {
+        
+        ListCase(desugar(l),desugar(t1),consVar1,consVar2,desugar(t2))
+      }
+
+
+      // Sequencing 
+      case Seq(e1,e2) => Seq(desugar(e1), desugar(e2))
+
+      //Signal case probably wrong 
+      case SignalBlock(e) => desugarBlock(e) //maybe change this to SignalBlock(desugarBlock(e))
+    
+      case e => e // Num, bool, str, var
+      //case _ => sys.error("todo ex5 " + e.toString)
       // END ANSWER
     }
   }
@@ -485,12 +656,61 @@ object Assignment3Standalone {
   /****************
    *  Exercise 6  *
    ****************/
+  def binaryOperation(e: (Expr,Expr)) : Boolean = {
+    e match {
+      case (t1 : IntV, t2 : IntV) => true
+      case _ => false
+    }
+  }
+
   def desugarBlock(e: Expr): Expr = {
     e match {
       case v: Value => Pure(desugar(v))
 
       // BEGIN ANSWER
-      case _ => sys.error("todo")
+      //apply
+      case Apply(se1,se2) =>Apply(desugarBlock(se1),desugarBlock(se2))
+
+      //ifthenelse
+      case IfThenElse(se,se1,se2) => When(desugarBlock(se),desugarBlock(se1),desugarBlock(se2))
+
+      //over
+      case Over(se1,se2) => Over(desugarBlock(se1),desugarBlock(se2))
+
+      //ARITHMETIC ONES NO IDEA probably wrong find where to fit in lambda //somehow figure out how to turn that into an expr
+      //case Plus(se1,se2) => if (binaryOperation((se1,se2))) {Pure({x:Int => y:Int => x + y}) <*> desugarBlock(se1) <*> desugarBlock(se2)} else {sys.error("Must be int for binary operation")}
+      case Plus(se1,se2) => if (binaryOperation((se1,se2))) {Pure(Lambda("x", IntTy, Lambda("y", IntTy, Plus(desugarBlock(se1),desugarBlock(se2)) ) ))}
+       else {sys.error("Must be int for binary operation")}
+       
+      case Minus(se1,se2) => if (binaryOperation((se1,se2))) {Pure(Lambda("x", IntTy, Lambda("y", IntTy, Minus(desugarBlock(se1),desugarBlock(se2)) ) ))}
+       else {sys.error("Must be int for binary operation")}
+
+      case Times(se1,se2) => if (binaryOperation((se1,se2))) {Pure(Lambda("x", IntTy, Lambda("y", IntTy, Times(desugarBlock(se1),desugarBlock(se2)) ) ))}
+       else {sys.error("Must be int for binary operation")}
+
+      case Div(se1,se2) => if (binaryOperation((se1,se2))) {Pure(Lambda("x", IntTy, Lambda("y", IntTy, Div(desugarBlock(se1),desugarBlock(se2)) ) ))}
+       else {sys.error("Must be int for binary operation")}
+
+      //case Minus(se1,se2) => if (binaryOperation((se1,se2))) {Minus(desugarBlock(se1), desugarBlock(se2))} else {sys.error("Must be int for binary operation")}
+      //case Times(se1,se2) => if (binaryOperation((se1,se2))) {Times(desugarBlock(se1), desugarBlock(se2))} else {sys.error("Must be int for binary operation")}
+      //case Div(se1,se2) => if (binaryOperation((se1,se2))) {Div(desugarBlock(se1), desugarBlock(se2))} else {sys.error("Must be int for binary operation")}
+
+
+      //time
+      case Time => Time
+
+      //read 
+      case Read(e) => Read(desugar(e))
+
+      //moveXY
+      case MoveXY(x,y,a) => MoveXY(desugar(x),desugar(y),desugar(a))
+
+      //escape
+      case Escape(e) => desugar(e)
+
+
+      
+      case _ => sys.error("todo ex6: " + e.toString)
       // END ANSWER
     }
   }
@@ -568,12 +788,81 @@ object Assignment3Standalone {
       }
     }
 
+
     def eval(expr: Expr): Value = expr match {
 
       // Values
       case v: Value => v
-      // BEGIN ANSWER
-      case _ => sys.error("todo")
+      
+      // arithmetic operations
+      case Plus(e1,e2) => extractOperation(expr)(eval(e1))(eval(e2))
+      case Minus(e1,e2) => extractOperation(expr)(eval(e1))(eval(e2))
+      case Times(e1,e2) => extractOperation(expr)(eval(e1))(eval(e2))
+      case Div(e1,e2) => extractOperation(expr)(eval(e1))(eval(e2))
+
+      //booleans
+      case Eq(e1,e2) => extractOperation(expr)(eval(e1))(eval(e2))
+      case LessThan(e1,e2) => extractOperation(expr)(eval(e1))(eval(e2))
+      case GreaterThan(e1,e2) => extractOperation(expr)(eval(e1))(eval(e2))
+      case IfThenElse(e,e1,e2) =>
+        eval(e) match {
+          case BoolV(true) => eval(e1)
+          case BoolV(false) => eval(e2)
+          case _ =>  sys.error("conditional must evaluate to a boolean")
+        }
+
+      //pairs
+      case Pair(e1,e2) => (e1,e2) match { 
+        case (x : Value, y: Value) => extractOperation(expr)(eval(e1))(eval(e2)) 
+        case _ => sys.error("pair must be values") }
+
+      case Fst(e) => eval(e) match {
+        case PairV(x,_) => x
+        case _ => sys.error("first must be applied to a pair")
+      }
+      
+      case Snd(e) => eval(e) match {
+        case PairV(_,y) => y
+        case _ => sys.error("second must be applied to a pair")
+      }
+
+
+      //lists
+      case Cons(e1,e2) => (e1,e2) match { 
+        case (x : Value, y: Value) => extractOperation(expr)(eval(e1))(eval(e2)) 
+        case _ => sys.error("cons must be values") }
+      //list case (what it evaluates to is in figure 10)
+      //empty list?
+
+
+      //functions
+      //app
+      //let
+      //rec
+      //lambda
+
+      //signals
+      case Pure(e) => PureV(eval(e)) 
+
+      //apply
+      case Apply(e1,e2) => ApplyV(eval(e1),eval(e2))
+
+      //moveXY
+      case MoveXY(e1,e2,e3) => MoveXYV(eval(e1),eval(e2),eval(e3))
+
+      //when
+      case When(e1,e2,e3) => WhenV(eval(e1),eval(e2),eval(e3))
+
+      //read
+      case Read(e) => ReadV(eval(e))
+      
+      //over
+      case Over(e1,e2) => OverV(eval(e1),eval(e2))
+
+      //time //obvously change this just for a test //this is wrong
+      case Time => TimeV
+
+      case _ => sys.error("todo ex7: " + expr.toString)
       // END ANSWER
     }
 
