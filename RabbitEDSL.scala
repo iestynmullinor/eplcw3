@@ -164,9 +164,9 @@ object Assignment3Embedded {
               , a: RabbitAnimation[Frame]): RabbitAnimation[Frame]
       = lift3(a)(dx)(dy)({(a: Frame) => (dx: Int) => (dy: Int) => a.map(pic => changeCoords(pic,dx,dy))})
 
-    //helper for scale (SHOULD BE p.x*factor and p.y*factor but does not currently typecheck) 
+    //helper for scale 
     def scalePicture(pic: Picture, factor: Double) : Picture
-        = Picture(pic.name, (pic.x*factor).toInt, (pic.y*factor).toInt, pic.scaleFactor*factor) //should be pic.scaleFactor*factor
+        = Picture(pic.name, (pic.x*factor).toInt, (pic.y*factor).toInt, pic.scaleFactor*factor) 
 
     def scale(factor: RabbitAnimation[Double], a: RabbitAnimation[Frame])
              : RabbitAnimation[Frame]
@@ -226,11 +226,14 @@ object Assignment3Embedded {
     players.foldLeft[RabbitAnimation[Frame]](blank)(f _)
   }
 
-  def testTest() =
-    (moveXY(((pure({x: Int => {y: Int => (x) - (y)}})) <*> (((pure({x: Int => {y: Int => (x) * (y)}})) <*> (time)) <*> (pure(50)))) <*> (pure(500)), pure(200), read("turtle"))<+>moveXY(when(((pure({x: Int => {y: Int => (x) < (y)}})) <*> (time)) <*> (pure(5)), ((pure({x: Int => {y: Int => (x) - (y)}})) <*> (((pure({x: Int => {y: Int => (x) * (y)}})) <*> (time)) <*> (pure(100)))) <*> (pure(500)), pure(0)), ((pure({x: Int => {y: Int => (x) - (y)}})) <*> (pure(0))) <*> (pure(200)), read("rabbit")))
+  def turtleRabbitTest() =
+    (moveXY(((pure({x_0: Int => {y_1: Int => (x_0) - (y_1)}})) <*> (((pure({x_2: Int => {y_3: Int => (x_2) * (y_3)}})) <*> (time)) <*> (pure(50)))) <*> (pure(500)), pure(200), read("turtle"))<+>moveXY(when(((pure({x_4: Int => {y_5: Int => (x_4) < (y_5)}})) <*> (time)) <*> (pure(5)), ((pure({x_6: Int => {y_7: Int => (x_6) - (y_7)}})) <*> (((pure({x_8: Int => {y_9: Int => (x_8) * (y_9)}})) <*> (time)) <*> (pure(100)))) <*> (pure(500)), pure(0)), ((pure({x_10: Int => {y_11: Int => (x_10) - (y_11)}})) <*> (pure(0))) <*> (pure(200)), read("rabbit")))
 
   def slowTurtleTest() =
-    moveXY(((pure({x_0: Int => {y_1: Int => (x_0) * (y_1)}})) <*> (time)) <*> (pure(20)), pure(100), read("turtle"))
+    moveXY(((pure({x_0_2: Int => {y_1_3: Int => (x_0_2) * (y_1_3)}})) <*> (time)) <*> (pure(20)), pure(100), read("turtle"))
+
+  def diagTurtleTest() =
+    moveXY(time, time, read("turtle"))
 
   object animalDance {
     val wiggle = pure({x: Int => sin(x * unit * Pi)}) <*> time
@@ -255,6 +258,9 @@ object Assignment3Embedded {
       rotate(pure({x: Int => x * unit * Pi}) <*> time, t)
     }
   }
+
+  def testingCatRabbitDance() =
+  moveXY(pure(0), ((pure({x_0_13_25: Int => {y_1_14_26: Int => (x_0_13_25) - (y_1_14_26)}})) <*> ((pure({x_11: Int => {if((((new(((Int, Int)) => Int){def apply(pa: (Int, Int)): Int = {val x = pa._1; {val y = pa._2; {if((x) < (y)) {x} else {(apply)(((x) - (y), y))}}}}}))(((x_11) / (1000), 2))) == (0)) {((new(((Int, Int)) => Int){def apply(pa: (Int, Int)): Int = {val x = pa._1; {val y = pa._2; {if((x) < (y)) {x} else {(apply)(((x) - (y), y))}}}}}))((x_11, 1000))} else {(1000) - (((new(((Int, Int)) => Int){def apply(pa: (Int, Int)): Int = {val x = pa._1; {val y = pa._2; {if((x) < (y)) {x} else {(apply)(((x) - (y), y))}}}}}))((x_11, 1000)))}}})) <*> (((pure({x_2_15_27: Int => {y_3_16_28: Int => (x_2_15_27) * (y_3_16_28)}})) <*> (time)) <*> (pure(100))))) <*> (pure(500)), read("cat"))<+>moveXY(((pure({x_4_18_30_37: Int => {y_5_19_31_38: Int => (x_4_18_30_37) - (y_5_19_31_38)}})) <*> ((pure({x_11: Int => {if((((new(((Int, Int)) => Int){def apply(pa: (Int, Int)): Int = {val x = pa._1; {val y = pa._2; {if((x) < (y)) {x} else {(apply)(((x) - (y), y))}}}}}))(((x_11) / (1000), 2))) == (0)) {((new(((Int, Int)) => Int){def apply(pa: (Int, Int)): Int = {val x = pa._1; {val y = pa._2; {if((x) < (y)) {x} else {(apply)(((x) - (y), y))}}}}}))((x_11, 1000))} else {(1000) - (((new(((Int, Int)) => Int){def apply(pa: (Int, Int)): Int = {val x = pa._1; {val y = pa._2; {if((x) < (y)) {x} else {(apply)(((x) - (y), y))}}}}}))((x_11, 1000)))}}})) <*> (((pure({x_6_20_32_39: Int => {y_7_21_33_40: Int => (x_6_20_32_39) * (y_7_21_33_40)}})) <*> (((pure({x_8_22_34_41: Int => {y_9_23_35_42: Int => (x_8_22_34_41) + (y_9_23_35_42)}})) <*> (time)) <*> (pure(5)))) <*> (pure(100))))) <*> (pure(500)), pure(0), read("rabbit"))
 
   object animalDance2 {
     def roundTrip(x: Int) = {if ((x/1000)%2 == 0) x%1000 else 1000-x%1000}
@@ -284,8 +290,10 @@ object Assignment3Embedded {
     (animalDance.catRabbitCircleDance(), 20, "catRabbitCircleDance.gif"),
     (animalDance2.catRabbitDance(), 20, "catRabbitDance2.gif"),
     (animalDance2.catRabbitDoubleDance(), 20, "catRabbitDoubleDance2.gif"),
-    (testTest(), 20, "testtesttest.gif"),
-    (slowTurtleTest(), 20, "slowTurtleTest.gif")
+    (turtleRabbitTest(), 20, "turtleRabbitTest.gif"),
+    (slowTurtleTest(), 20, "slowTurtleTest.gif"),
+    (testingCatRabbitDance(), 20, "catRabbitDanceTest.gif"),
+    (diagTurtleTest(),20,"diagTurtleTest.gif")
 
   )
 

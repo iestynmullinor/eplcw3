@@ -173,14 +173,11 @@ object Assignment3Standalone {
       case (a,b) => if (ListTy(a) == b) {b} else {sys.error("Argument to add to list does not match type of list")}
     }
 
-    //listcase (VERY WRONG) TODO!!!
-    case ListCase(l,e1,x,y,e2) => {
-      var sigma1 = tyOf(ctx, e1)
-      var listSigma1 = tyOf(ctx, l)
-      var sigma2 = tyOf(ctx,e2)
-      return tyOf(ctx + (x -> (sigma1)) + (y -> listSigma1), e1)
+    //listcase 
+    case ListCase(l,e1,x,y,e2) => (tyOf(ctx,l),tyOf(ctx,e1)) match {
+      case (ListTy(sigma1),sigma2) => if (tyOf(ctx + (x -> sigma1) + (y -> ListTy(sigma1)), e2) == sigma2) {sigma2} else {sys.error("types do not match")}
+      case _ => sys.error("y must be of type List[tau] where tau is the type of x")
     }
-
 
     //sequencing 
     case Seq(e1,e2) => tyOf(ctx,e1) match { 
@@ -316,9 +313,6 @@ object Assignment3Standalone {
         case (_,a,b) => sys.error("type of conditional must be boolean")
       }
 
-      //strings and rest
-      //the weierd none thats after string (PROBABLY VIOLENTLY WRONG)
-      //case x : Expr => if (isSimpleType(tyOf(ctx,x))) {tyOfSignal(ctx,x)} else {sys.error("Must be simple type")}
 
       //app
       case App(se1,se2) => (tyOfSignal(ctx,se1),tyOfSignal(ctx,se2)) match {
@@ -365,10 +359,10 @@ object Assignment3Standalone {
       }
 
     //get rid of this it is only here for  a test \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-    //  case When(e1,e2,e3) => (tyOfSignal(ctx,e1), tyOfSignal(ctx,e2), tyOfSignal(ctx,e3)) match {
-    //  case (BoolTy,tau1,tau2) => if (tau1 == tau2) {tau1} else {sys.error("e2 and e3 must both have same type")}
-    //  case _ => sys.error("e1 must be Signal[Boolean]")
-    //}
+      case When(e1,e2,e3) => (tyOfSignal(ctx,e1), tyOfSignal(ctx,e2), tyOfSignal(ctx,e3)) match {
+      case (BoolTy,tau1,tau2) => if (tau1 == tau2) {tau1} else {sys.error("e2 and e3 must both have same type")}
+      case _ => sys.error("e1 must be Signal[Boolean]")
+    }
 
       //idk
       case Var(x) => if (isSimpleType(ctx(x))) {ctx(x)} else {sys.error("must be simple type")}
@@ -595,10 +589,10 @@ object Assignment3Standalone {
 
       // arithmetic expressions
 
-      case Plus(e1,e2) => Plus(desugar(e1),desugar(e2))
-      case Minus(e1,e2) => Minus(desugar(e1),desugar(e2))
-      case Times(e1,e2) => Times(desugar(e1),desugar(e2))
-      case Div(e1,e2) => Div(desugar(e1),desugar(e2))
+      //case Plus(e1,e2) => Plus(desugar(e1),desugar(e2))
+      //case Minus(e1,e2) => Minus(desugar(e1),desugar(e2))
+      //case Times(e1,e2) => Times(desugar(e1),desugar(e2))
+      //case Div(e1,e2) => Div(desugar(e1),desugar(e2))
 
       // booleans
 
@@ -610,7 +604,7 @@ object Assignment3Standalone {
       //variables and let bindings
       case Let(x,e1,e2) => Let(x,desugar(e1),desugar(e2))
       case LetFun(f,arg,ty,e1,e2) =>
-        Let(f,Lambda(arg,ty,desugar(e1)),desugar(e2))
+        Let(f,Lambda(arg,ty,desugar(e1)),desugar(e2)) 
       case LetRec(f,arg,xty,ty,e1,e2) => {
         Let(f,
           Rec(f,arg,xty,ty,desugar(e1)),
@@ -647,8 +641,12 @@ object Assignment3Standalone {
 
       //Signal case probably wrong 
       case SignalBlock(e) => desugarBlock(e) //maybe change this to SignalBlock(desugarBlock(e))
-    
+
+
+
+      //PROBABLY SHOULD JUST BE e PURE IS IN WRONG PLACE
       case e => e // Num, bool, str, var
+
       //case _ => sys.error("todo ex5 " + e.toString)
       // END ANSWER
     }
@@ -680,14 +678,26 @@ object Assignment3Standalone {
 
       //ARITHMETIC ONES NO IDEA probably wrong find where to fit in lambda //somehow figure out how to turn that into an expr
       //case Plus(se1,se2) => if (binaryOperation((se1,se2))) {Pure({x:Int => y:Int => x + y}) <*> desugarBlock(se1) <*> desugarBlock(se2)} else {sys.error("Must be int for binary operation")}
-      case Plus(se1,se2) => {Apply(Apply(Pure(Lambda("x", IntTy, Lambda("y", IntTy, Plus(Var("x"),Var("y") )) )),desugarBlock(se1)), desugarBlock(se2)) } //<*> desugarBlock(se1) <*> desugarBlock(se2)}
+      case Plus(se1,se2) => {
+        val x = Gensym.gensym("x")
+        val y = Gensym.gensym("y")
+        Apply(Apply(Pure(Lambda(x, IntTy, Lambda(y, IntTy, Plus(Var(x),Var(y) )) )),desugarBlock(se1)), desugarBlock(se2)) } //<*> desugarBlock(se1) <*> desugarBlock(se2)}
       // else {sys.error("Must be int for binary operation")}
        
-      case Minus(se1,se2) =>  {Apply(Apply(Pure(Lambda("x", IntTy, Lambda("y", IntTy, Minus(Var("x"),Var("y") )) )),desugarBlock(se1)), desugarBlock(se2)) } 
+      case Minus(se1,se2) =>  {
+        val x = Gensym.gensym("x")
+        val y = Gensym.gensym("y")
+        Apply(Apply(Pure(Lambda(x, IntTy, Lambda(y, IntTy, Minus(Var(x),Var(y) )) )),desugarBlock(se1)), desugarBlock(se2)) } 
 
-      case Times(se1,se2) =>  {Apply(Apply(Pure(Lambda("x", IntTy, Lambda("y", IntTy, Times(Var("x"),Var("y") )) )),desugarBlock(se1)), desugarBlock(se2)) } 
+      case Times(se1,se2) =>  {
+        val x = Gensym.gensym("x")
+        val y = Gensym.gensym("y")
+        Apply(Apply(Pure(Lambda(x, IntTy, Lambda(y, IntTy, Times(Var(x),Var(y) )) )),desugarBlock(se1)), desugarBlock(se2)) } 
      
-      case Div(se1,se2) =>  {Apply(Apply(Pure(Lambda("x", IntTy, Lambda("y", IntTy, Div(Var("x"),Var("y") )) )),desugarBlock(se1)), desugarBlock(se2)) } 
+      case Div(se1,se2) =>  {
+        val x = Gensym.gensym("x")
+        val y = Gensym.gensym("y")
+        Apply(Apply(Pure(Lambda(x, IntTy, Lambda(y, IntTy, Div(Var(x),Var(y) )) )),desugarBlock(se1)), desugarBlock(se2)) } 
        
 
       //case Div(se1,se2) => if (binaryOperation((se1,se2))) {Pure(Lambda("x", IntTy, Lambda("y", IntTy, Div(desugarBlock(se1),desugarBlock(se2)) ) ))}
@@ -698,15 +708,24 @@ object Assignment3Standalone {
       //case Div(se1,se2) => if (binaryOperation((se1,se2))) {Div(desugarBlock(se1), desugarBlock(se2))} else {sys.error("Must be int for binary operation")}
 
       //less than
-      case LessThan(se1,se2) =>  {Apply(Apply(Pure(Lambda("x", IntTy, Lambda("y", IntTy, LessThan(Var("x"),Var("y") )) )),desugarBlock(se1)), desugarBlock(se2)) } 
+      case LessThan(se1,se2) =>  {
+        val x = Gensym.gensym("x")
+        val y = Gensym.gensym("y")
+        Apply(Apply(Pure(Lambda(x, IntTy, Lambda(y, IntTy, LessThan(Var(x),Var(y) )) )),desugarBlock(se1)), desugarBlock(se2)) } 
        
 
       //greater than
-      case GreaterThan(se1,se2) =>  {Apply(Apply(Pure(Lambda("x", IntTy, Lambda("y", IntTy, GreaterThan(Var("x"),Var("y") )) )),desugarBlock(se1)), desugarBlock(se2)) } 
+      case GreaterThan(se1,se2) =>  {
+        val x = Gensym.gensym("x")
+        val y = Gensym.gensym("y")
+        Apply(Apply(Pure(Lambda(x, IntTy, Lambda(y, IntTy, GreaterThan(Var(x),Var(y) )) )),desugarBlock(se1)), desugarBlock(se2)) } 
        
 
       //equals
-      case Eq(se1,se2) => {Apply(Apply(Pure(Lambda("x", IntTy, Lambda("y", IntTy, Eq(Var("x"),Var("y") )) )),desugarBlock(se1)), desugarBlock(se2)) } 
+      case Eq(se1,se2) => {
+        val x = Gensym.gensym("x")
+        val y = Gensym.gensym("y")
+        Apply(Apply(Pure(Lambda(x, IntTy, Lambda(y, IntTy, Eq(Var(x),Var(y) )) )),desugarBlock(se1)), desugarBlock(se2)) } 
     
 
       //when
@@ -726,12 +745,14 @@ object Assignment3Standalone {
       //escape
       case Escape(e) => desugar(e)
 
-      //WRONG HERE FOR TESTING PURPOSES
-      //case App(e1,e2) => App(e1,e2)
+      //app
+      case App(e1,e2) => Apply(desugarBlock(e1),desugarBlock(e2)) //idk about pure //THIS IS WRONG 
 
-
+      case Var(x) => Pure(Var(x)) //this needs to go probablu
       
-      case _ => sys.error("todo ex6: " + e.toString)
+       case e => e 
+      
+      //case _ => sys.error("todo ex6: " + e.toString)
       // END ANSWER
     }
   }
@@ -813,7 +834,7 @@ object Assignment3Standalone {
     def eval(expr: Expr): Value = {
 
     //testing purposes
-    //println(expr.toString);
+    println(expr.toString);
     
     expr match {
 
@@ -883,18 +904,31 @@ object Assignment3Standalone {
 
 
       //lists
-      case Cons(e1,e2) => (e1,e2) match { 
+      //cons
+      case Cons(e1,e2) => (eval(e1),eval(e2)) match { 
         case (x : Value, ListV(y)) => ListV(x :: y)
         case _ => sys.error("cons must be values") }
+
       //list case (what it evaluates to is in figure 10)
-      //empty list?
+      case ListCase(l,e1,x,y,e2) => eval(l) match {
+        case ListV(List()) => eval(e1)
+        //case Cons(head,EmptyList(ty)) => eval(subst(subst(e2,EmptyList(ty),y),head,x))
+        case ListV(head :: tail) => eval(subst(subst(e2,ListV(tail),y),head,x))
+        //case ListV(head :: tail) => eval(subst(subst(e2,head,y),ListCase(ListV(tail),e1,x,y,e2),x)) //prob should eval head and tail
+        case _ => sys.error("must be list: " + expr.toString)
+      }
+
+      //Substitution e1 [e2 / x]
+
+      //empty list
+      case EmptyList(ty) => ListV(List())
 
 
       //functions //Substitution e1 [e2 / x]
       //maybe this
       case App(e1,e2) => eval(e1) match {
         case FunV(x,ty,e) => eval(subst(e, eval(e2), x))
-        case RecV(f, x, tyx, ty, e) =>  eval(subst(subst(e,RecV(f,x,tyx,ty,e), f),eval(e2),x))//eval(RecV(f,x,tyx,ty,subst(subst(e,eval(e2),x),eval(e1),f)))
+        case RecV(f, x, tyx, ty, e) =>  eval(subst(subst(e,eval(e1), f),eval(e2),x)) // maybe eval(e1) should be RecV(f, x, tyx, ty, e)
         case _ => sys.error("first argument must be function")
       }
 
@@ -925,7 +959,7 @@ object Assignment3Standalone {
       //over
       case Over(e1,e2) => OverV(eval(e1),eval(e2))
 
-      //time //obvously change this just for a test //this is wrong
+      //time 
       case Time => TimeV
 
       //leftover from assn2
@@ -934,6 +968,9 @@ object Assignment3Standalone {
         FunV(x,ty,e)
       case Rec(f,x,tyx,ty,e) =>
         RecV(f,x,tyx,ty,e)
+
+      //idk
+      //case Var(x) => Gensym.gensym(x)
       
       case _ => sys.error("todo ex7: " + expr.toString)
       // END ANSWER
