@@ -365,10 +365,10 @@ object Assignment3Standalone {
       }
 
     //get rid of this it is only here for  a test \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-      case When(e1,e2,e3) => (tyOfSignal(ctx,e1), tyOfSignal(ctx,e2), tyOfSignal(ctx,e3)) match {
-      case (BoolTy,tau1,tau2) => if (tau1 == tau2) {tau1} else {sys.error("e2 and e3 must both have same type")}
-      case _ => sys.error("e1 must be Signal[Boolean]")
-    }
+    //  case When(e1,e2,e3) => (tyOfSignal(ctx,e1), tyOfSignal(ctx,e2), tyOfSignal(ctx,e3)) match {
+    //  case (BoolTy,tau1,tau2) => if (tau1 == tau2) {tau1} else {sys.error("e2 and e3 must both have same type")}
+    //  case _ => sys.error("e1 must be Signal[Boolean]")
+    //}
 
       //idk
       case Var(x) => if (isSimpleType(ctx(x))) {ctx(x)} else {sys.error("must be simple type")}
@@ -727,7 +727,7 @@ object Assignment3Standalone {
       case Escape(e) => desugar(e)
 
       //WRONG HERE FOR TESTING PURPOSES
-      case App(e1,e2) => App(e1,e2)
+      //case App(e1,e2) => App(e1,e2)
 
 
       
@@ -810,8 +810,15 @@ object Assignment3Standalone {
     }
 
 
-    def eval(expr: Expr): Value = expr match {
+    def eval(expr: Expr): Value = {
 
+    //testing purposes
+    //println(expr.toString);
+    
+    expr match {
+
+      
+      
       // Values
       case v: Value => v
       
@@ -862,9 +869,7 @@ object Assignment3Standalone {
         }
 
       //pairs
-      case Pair(e1,e2) => (e1,e2) match { 
-        case (x : Value, y: Value) => PairV(eval(e1),eval(e2)) 
-        case _ => sys.error("pair must be values") }
+      case Pair(e1,e2) => PairV(eval(e1),eval(e2))
 
       case Fst(e) => eval(e) match {
         case PairV(x,_) => eval(x)
@@ -933,7 +938,7 @@ object Assignment3Standalone {
       case _ => sys.error("todo ex7: " + expr.toString)
       // END ANSWER
     }
-
+    }
     
   }
   ////////////////////////////////////////////////////////////////////
