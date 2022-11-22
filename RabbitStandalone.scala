@@ -190,10 +190,10 @@ object Assignment3Standalone {
 
     //signals
     //time
-    case Time => SignalTy(IntTy)
+    case Time => SignalTy(IntTy) //should be SignalTy(IntTy)
 
     //pure
-    case Pure(e) => if (isSimpleType(tyOf(ctx, e))) {tyOf(ctx,e)} else {sys.error("type of expression must be simple type")}  //need to make sure e is simple
+    case Pure(e) => if (isSimpleType(tyOf(ctx, e))) {SignalTy(tyOf(ctx,e))} else {sys.error("type of expression must be simple type")}  //need to make sure e is simple
 
     //apply
     case Apply(e1,e2) => {
@@ -219,7 +219,7 @@ object Assignment3Standalone {
     //moveXY
     case MoveXY(x,y,a) => (tyOf(ctx, x), tyOf(ctx,y), tyOf(ctx, a)) match {
       case (SignalTy(IntTy), SignalTy(IntTy), SignalTy(FrameTy)) => SignalTy(FrameTy)
-      case _ => sys.error("x and y must be signal(int), a must be signal(frame)")
+      case _ => sys.error("x and y must be signal(int), a must be signal(frame): " + e.toString + "   for this case, the 3 types are: " + tyOf(ctx,x).toString + " " + tyOf(ctx,y).toString + " " + tyOf(ctx,a).toString)
     }
 
     //blank
@@ -237,8 +237,9 @@ object Assignment3Standalone {
       case _ => sys.error("e1 must be Signal[Boolean]")
     }
 
+
     //SignalBlock
-    case SignalBlock(se) => SignalTy(tyOfSignal(ctx,se))
+    case SignalBlock(se) => SignalTy(tyOfSignal(ctx,se)) //should be SignalTy(tyOfSignal(ctx,se))
 
       case _ => sys.error("todo typechecker ex2")
       // END ANSWER
@@ -347,7 +348,7 @@ object Assignment3Standalone {
       //moveXY
       case MoveXY(x,y,a) => (tyOfSignal(ctx, x), tyOfSignal(ctx,y), tyOfSignal(ctx, a)) match {
         case (IntTy, IntTy, FrameTy) => FrameTy
-        case _ => sys.error("x and y must be signal(int), a must be signal(frame)")
+        case _ => sys.error("x and y must be int, a must be frame")
     }
 
     //read
@@ -370,7 +371,7 @@ object Assignment3Standalone {
     }
 
       //idk
-      case Var(x) => SignalTy(ctx(x))
+      case Var(x) => if (isSimpleType(ctx(x))) {ctx(x)} else {sys.error("must be simple type")}
 
 
       case _ => {
@@ -679,34 +680,54 @@ object Assignment3Standalone {
 
       //ARITHMETIC ONES NO IDEA probably wrong find where to fit in lambda //somehow figure out how to turn that into an expr
       //case Plus(se1,se2) => if (binaryOperation((se1,se2))) {Pure({x:Int => y:Int => x + y}) <*> desugarBlock(se1) <*> desugarBlock(se2)} else {sys.error("Must be int for binary operation")}
-      case Plus(se1,se2) => if (binaryOperation((se1,se2))) {Pure(Lambda("x", IntTy, Lambda("y", IntTy, Plus(desugarBlock(se1),desugarBlock(se2)) ) ))}
-       else {sys.error("Must be int for binary operation")}
+      case Plus(se1,se2) => {Apply(Apply(Pure(Lambda("x", IntTy, Lambda("y", IntTy, Plus(Var("x"),Var("y") )) )),desugarBlock(se1)), desugarBlock(se2)) } //<*> desugarBlock(se1) <*> desugarBlock(se2)}
+      // else {sys.error("Must be int for binary operation")}
        
-      case Minus(se1,se2) => if (binaryOperation((se1,se2))) {Pure(Lambda("x", IntTy, Lambda("y", IntTy, Minus(desugarBlock(se1),desugarBlock(se2)) ) ))}
-       else {sys.error("Must be int for binary operation")}
+      case Minus(se1,se2) =>  {Apply(Apply(Pure(Lambda("x", IntTy, Lambda("y", IntTy, Minus(Var("x"),Var("y") )) )),desugarBlock(se1)), desugarBlock(se2)) } 
 
-      case Times(se1,se2) => if (binaryOperation((se1,se2))) {Pure(Lambda("x", IntTy, Lambda("y", IntTy, Times(desugarBlock(se1),desugarBlock(se2)) ) ))}
-       else {sys.error("Must be int for binary operation")}
+      case Times(se1,se2) =>  {Apply(Apply(Pure(Lambda("x", IntTy, Lambda("y", IntTy, Times(Var("x"),Var("y") )) )),desugarBlock(se1)), desugarBlock(se2)) } 
+     
+      case Div(se1,se2) =>  {Apply(Apply(Pure(Lambda("x", IntTy, Lambda("y", IntTy, Div(Var("x"),Var("y") )) )),desugarBlock(se1)), desugarBlock(se2)) } 
+       
 
-      case Div(se1,se2) => if (binaryOperation((se1,se2))) {Pure(Lambda("x", IntTy, Lambda("y", IntTy, Div(desugarBlock(se1),desugarBlock(se2)) ) ))}
-       else {sys.error("Must be int for binary operation")}
+      //case Div(se1,se2) => if (binaryOperation((se1,se2))) {Pure(Lambda("x", IntTy, Lambda("y", IntTy, Div(desugarBlock(se1),desugarBlock(se2)) ) ))}
+      // else {sys.error("Must be int for binary operation")}
 
       //case Minus(se1,se2) => if (binaryOperation((se1,se2))) {Minus(desugarBlock(se1), desugarBlock(se2))} else {sys.error("Must be int for binary operation")}
       //case Times(se1,se2) => if (binaryOperation((se1,se2))) {Times(desugarBlock(se1), desugarBlock(se2))} else {sys.error("Must be int for binary operation")}
       //case Div(se1,se2) => if (binaryOperation((se1,se2))) {Div(desugarBlock(se1), desugarBlock(se2))} else {sys.error("Must be int for binary operation")}
 
+      //less than
+      case LessThan(se1,se2) =>  {Apply(Apply(Pure(Lambda("x", IntTy, Lambda("y", IntTy, LessThan(Var("x"),Var("y") )) )),desugarBlock(se1)), desugarBlock(se2)) } 
+       
+
+      //greater than
+      case GreaterThan(se1,se2) =>  {Apply(Apply(Pure(Lambda("x", IntTy, Lambda("y", IntTy, GreaterThan(Var("x"),Var("y") )) )),desugarBlock(se1)), desugarBlock(se2)) } 
+       
+
+      //equals
+      case Eq(se1,se2) => {Apply(Apply(Pure(Lambda("x", IntTy, Lambda("y", IntTy, Eq(Var("x"),Var("y") )) )),desugarBlock(se1)), desugarBlock(se2)) } 
+    
+
+      //when
+      case When(se1,se2,se3) => When(desugarBlock(se1),desugarBlock(se2),desugarBlock(se3))
 
       //time
       case Time => Time
+
+    
 
       //read 
       case Read(e) => Read(desugar(e))
 
       //moveXY
-      case MoveXY(x,y,a) => MoveXY(desugar(x),desugar(y),desugar(a))
+      case MoveXY(x,y,a) => MoveXY(desugarBlock(x),desugarBlock(y),desugarBlock(a))
 
       //escape
       case Escape(e) => desugar(e)
+
+      //WRONG HERE FOR TESTING PURPOSES
+      case App(e1,e2) => App(e1,e2)
 
 
       
@@ -795,15 +816,44 @@ object Assignment3Standalone {
       case v: Value => v
       
       // arithmetic operations
-      case Plus(e1,e2) => extractOperation(expr)(eval(e1))(eval(e2))
-      case Minus(e1,e2) => extractOperation(expr)(eval(e1))(eval(e2))
-      case Times(e1,e2) => extractOperation(expr)(eval(e1))(eval(e2))
-      case Div(e1,e2) => extractOperation(expr)(eval(e1))(eval(e2))
+      //case Plus(e1,e2) => extractOperation(expr)(eval(e1))(eval(e2))
+      case Plus(e1,e2) => (e1,e2) match {
+        case (IntV(e1),IntV(e2)) => IntV(e1+e2)
+        case _ => eval(Plus(eval(e1),eval(e2))) 
+      }
+      //case Minus(e1,e2) => extractOperation(expr)(eval(e1))(eval(e2))
+      case Minus(e1,e2) => (e1,e2) match {
+        case (IntV(e1),IntV(e2)) => IntV(e1-e2)
+        case _ => eval(Minus(eval(e1),eval(e2)))
+      }
+      //case Times(e1,e2) => extractOperation(expr)(eval(e1))(eval(e2))
+      case Times(e1,e2) => (e1,e2) match {
+        case (IntV(e1),IntV(e2)) => IntV(e1*e2)
+        case _ => eval(Times(eval(e1),eval(e2)))
+      }
+      //case Div(e1,e2) => extractOperation(expr)(eval(e1))(eval(e2))
+      case Div(e1,e2) => (e1,e2) match {
+        case (IntV(e1),IntV(e2)) => IntV(e1/e2)
+        case _ => eval(Div(eval(e1),eval(e2))) 
+      }
 
       //booleans
-      case Eq(e1,e2) => extractOperation(expr)(eval(e1))(eval(e2))
-      case LessThan(e1,e2) => extractOperation(expr)(eval(e1))(eval(e2))
-      case GreaterThan(e1,e2) => extractOperation(expr)(eval(e1))(eval(e2))
+      //case Eq(e1,e2) => extractOperation(expr)(eval(e1))(eval(e2))
+      case Eq(e1,e2) => (e1,e2) match {
+        case (IntV(e1),IntV(e2)) => BoolV(e1 == e2)
+        case _ => eval(Eq(eval(e1),eval(e2))) 
+      }
+      //case LessThan(e1,e2) => extractOperation(expr)(eval(e1))(eval(e2))
+      case LessThan(e1,e2) => (e1,e2) match {
+        case (IntV(e1),IntV(e2)) => BoolV(e1 < e2)
+        case _ => eval(LessThan(eval(e1),eval(e2))) 
+      }
+      //case GreaterThan(e1,e2) => extractOperation(expr)(eval(e1))(eval(e2))
+      case GreaterThan(e1,e2) => (e1,e2) match {
+        case (IntV(e1),IntV(e2)) => BoolV(e1 > e2)
+        case _ => eval(GreaterThan(eval(e1),eval(e2))) 
+      }
+
       case IfThenElse(e,e1,e2) =>
         eval(e) match {
           case BoolV(true) => eval(e1)
@@ -813,33 +863,44 @@ object Assignment3Standalone {
 
       //pairs
       case Pair(e1,e2) => (e1,e2) match { 
-        case (x : Value, y: Value) => extractOperation(expr)(eval(e1))(eval(e2)) 
+        case (x : Value, y: Value) => PairV(eval(e1),eval(e2)) 
         case _ => sys.error("pair must be values") }
 
       case Fst(e) => eval(e) match {
-        case PairV(x,_) => x
+        case PairV(x,_) => eval(x)
         case _ => sys.error("first must be applied to a pair")
       }
       
       case Snd(e) => eval(e) match {
-        case PairV(_,y) => y
+        case PairV(_,y) => eval(y)
         case _ => sys.error("second must be applied to a pair")
       }
 
 
       //lists
       case Cons(e1,e2) => (e1,e2) match { 
-        case (x : Value, y: Value) => extractOperation(expr)(eval(e1))(eval(e2)) 
+        case (x : Value, ListV(y)) => ListV(x :: y)
         case _ => sys.error("cons must be values") }
       //list case (what it evaluates to is in figure 10)
       //empty list?
 
 
-      //functions
-      //app
+      //functions //Substitution e1 [e2 / x]
+      //maybe this
+      case App(e1,e2) => eval(e1) match {
+        case FunV(x,ty,e) => eval(subst(e, eval(e2), x))
+        case RecV(f, x, tyx, ty, e) =>  eval(subst(subst(e,RecV(f,x,tyx,ty,e), f),eval(e2),x))//eval(RecV(f,x,tyx,ty,subst(subst(e,eval(e2),x),eval(e1),f)))
+        case _ => sys.error("first argument must be function")
+      }
+
+      //case class FunV(x: Variable, ty: Type, e: Expr) extends Value
+      //case class RecV(f: Variable, x: Variable, tyx: Type, ty: Type, e: Expr) extends Value
+
       //let
+      case Let(x,e1,e2) => eval(subst(e2, eval(e1), x))
+
       //rec
-      //lambda
+      //lambda //think these are included in app
 
       //signals
       case Pure(e) => PureV(eval(e)) 
@@ -862,6 +923,13 @@ object Assignment3Standalone {
       //time //obvously change this just for a test //this is wrong
       case Time => TimeV
 
+      //leftover from assn2
+      //functions
+      case Lambda(x,ty,e) =>
+        FunV(x,ty,e)
+      case Rec(f,x,tyx,ty,e) =>
+        RecV(f,x,tyx,ty,e)
+      
       case _ => sys.error("todo ex7: " + expr.toString)
       // END ANSWER
     }

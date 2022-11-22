@@ -150,7 +150,7 @@ object Assignment3Embedded {
       = Signal(f()(t()))
 
     //helper for when
-    def check(x: Boolean) : Boolean = x  
+    //def check(x: Boolean) : Boolean = x  
 
     def when[A]( b: RabbitAnimation[Boolean], t1: RabbitAnimation[A]
                , t2: RabbitAnimation[A]): RabbitAnimation[A] = 
@@ -166,7 +166,7 @@ object Assignment3Embedded {
 
     //helper for scale (SHOULD BE p.x*factor and p.y*factor but does not currently typecheck) 
     def scalePicture(pic: Picture, factor: Double) : Picture
-        = Picture(pic.name, (pic.x*factor).asInstanceOf[Int], (pic.y*factor).asInstanceOf[Int], pic.scaleFactor*factor) //should be pic.scaleFactor*factor
+        = Picture(pic.name, (pic.x*factor).toInt, (pic.y*factor).toInt, pic.scaleFactor*factor) //should be pic.scaleFactor*factor
 
     def scale(factor: RabbitAnimation[Double], a: RabbitAnimation[Frame])
              : RabbitAnimation[Frame]
@@ -174,7 +174,7 @@ object Assignment3Embedded {
 
     //helper for rotate 
     def rotatePicture(pic: Picture, angle: Double) : Picture
-        = Picture(pic.name, (pic.x*cos(angle)+pic.y*sin(angle)).asInstanceOf[Int], (-pic.x*sin(angle)+pic.y*cos(angle)).asInstanceOf[Int], pic.scaleFactor, pic.angle + angle)
+        = Picture(pic.name, (pic.x*cos(angle)+pic.y*sin(angle)).toInt, (-pic.x*sin(angle)+pic.y*cos(angle)).toInt, pic.scaleFactor, pic.angle + angle)
 
     def rotate(angle: RabbitAnimation[Double], a: RabbitAnimation[Frame])
               : RabbitAnimation[Frame]
@@ -225,6 +225,12 @@ object Assignment3Embedded {
       }
     players.foldLeft[RabbitAnimation[Frame]](blank)(f _)
   }
+
+  def testTest() =
+    (moveXY(((pure({x: Int => {y: Int => (x) - (y)}})) <*> (((pure({x: Int => {y: Int => (x) * (y)}})) <*> (time)) <*> (pure(50)))) <*> (pure(500)), pure(200), read("turtle"))<+>moveXY(when(((pure({x: Int => {y: Int => (x) < (y)}})) <*> (time)) <*> (pure(5)), ((pure({x: Int => {y: Int => (x) - (y)}})) <*> (((pure({x: Int => {y: Int => (x) * (y)}})) <*> (time)) <*> (pure(100)))) <*> (pure(500)), pure(0)), ((pure({x: Int => {y: Int => (x) - (y)}})) <*> (pure(0))) <*> (pure(200)), read("rabbit")))
+
+  def slowTurtleTest() =
+    moveXY(((pure({x_0: Int => {y_1: Int => (x_0) * (y_1)}})) <*> (time)) <*> (pure(20)), pure(100), read("turtle"))
 
   object animalDance {
     val wiggle = pure({x: Int => sin(x * unit * Pi)}) <*> time
@@ -277,7 +283,10 @@ object Assignment3Embedded {
     (animalDance.catRabbitZoomDance(), 20, "catRabbitZoomDance.gif"),
     (animalDance.catRabbitCircleDance(), 20, "catRabbitCircleDance.gif"),
     (animalDance2.catRabbitDance(), 20, "catRabbitDance2.gif"),
-    (animalDance2.catRabbitDoubleDance(), 20, "catRabbitDoubleDance2.gif")
+    (animalDance2.catRabbitDoubleDance(), 20, "catRabbitDoubleDance2.gif"),
+    (testTest(), 20, "testtesttest.gif"),
+    (slowTurtleTest(), 20, "slowTurtleTest.gif")
+
   )
 
   //val testToRun = List ((testRead, 20, "testRead.gif"))
