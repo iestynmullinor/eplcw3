@@ -165,12 +165,16 @@ object Assignment3Embedded {
       = lift3(a)(dx)(dy)({(a: Frame) => (dx: Int) => (dy: Int) => a.map(pic => changeCoords(pic,dx,dy))})
 
     //helper for scale 
-    def scalePicture(pic: Picture, factor: Double) : Picture
-        = Picture(pic.name, (pic.x*factor).toInt, (pic.y*factor).toInt, pic.scaleFactor*factor) 
+    def scalePicture(pic: Picture, factor: Double) : Picture = {
+         val newx = (pic.x)*factor
+         val newy = (pic.y)*factor
+         val newFactor = (pic.scaleFactor)*factor
+         Picture(pic.name, newx.toInt, newy.toInt, newFactor, pic.angle) }//for some reason does not work with scaling it by a  constant eg pure(0.4)
 
     def scale(factor: RabbitAnimation[Double], a: RabbitAnimation[Frame])
-             : RabbitAnimation[Frame]
-      = lift2(a)(factor)({(a: Frame) => (factor: Double) => a.map(pic => scalePicture(pic,factor))})
+             : RabbitAnimation[Frame] =
+        lift2(a)(factor)({(a: Frame) => (factor: Double) => a.map(pic => scalePicture(pic,factor))})
+      
 
     //helper for rotate 
     def rotatePicture(pic: Picture, angle: Double) : Picture
